@@ -47,6 +47,7 @@ struct drm_framebuffer {
 
 	uint32_t current_fb, next_fb;
 	drmEventContext evctx;
+	struct drm_framebuffer **fb_out;
 };
 
 static drmModeConnectorPtr fb0_find_connector(int fd, drmModeResPtr res)
@@ -287,6 +288,9 @@ static int fb0_set_swap_interval(
 
 static int fb0_close(struct hw_device_t *dev)
 {
+	struct drm_framebuffer *fb = (struct drm_framebuffer *) dev;
+	*fb->fb_out = NULL;
+
 	free(dev);
 	return 0;
 }
@@ -316,6 +320,7 @@ int drm_framebuffer_open(int fd, struct drm_framebuffer **fb_out, struct hw_devi
 	fb->device.post = fb0_post;
 	fb->device.compositionComplete = fb0_composition_complete;
 	fb->device.enableScreen = fb0_enable_screen;
+	fb->fb_out = fb_out;
 
 	*fb_out = fb;
 	*dev = &fb->device.common;
