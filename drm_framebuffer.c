@@ -26,6 +26,7 @@
 #include <string.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <cutils/properties.h>
 #include <hardware/gralloc.h>
 #include <log/log.h>
 
@@ -90,10 +91,27 @@ static drmModeModeInfoPtr fb0_find_preferred_mode(drmModeConnectorPtr connector)
 {
 	int i;
 	drmModeModeInfoPtr mode = NULL;
+	char value[PROPERTY_VALUE_MAX];
+	uint32_t xres = 0, yres = 0, rate = 0;
+	if (property_get("debug.drm.mode.force", value, NULL)) {
+		/* parse <xres>x<yres>[@<refreshrate>] */
+		if (sscanf(value, "%dx%d@%d", &xres, &yres, &rate) != 3) {
+			rate = 0;
+			if (sscanf(value, "%dx%d", &xres, &yres) != 2) {
+				xres = yres = 0;
+			}
+		}
+		ALOGI_IF(xres && yres, "force mode to %dx%d@%dHz", xres, yres, rate);
+	}
 
 	for (i = 0; i < connector->count_modes; ++i) {
 		mode = &connector->modes[i];
-		if (mode->type & DRM_MODE_TYPE_PREFERRED) {
+		if (xres && yres) {
+			if (mode->hdisplay == xres && mode->vdisplay == yres &&
+					(!rate || mode->vrefresh == rate)) {
+				break;
+			}
+		} else if (mode->type & DRM_MODE_TYPE_PREFERRED) {
 			break;
 		}
 	}
