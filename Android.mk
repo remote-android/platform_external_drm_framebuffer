@@ -29,7 +29,9 @@ LOCAL_SRC_FILES := drm_framebuffer.c
 LOCAL_EXPORT_C_INCLUDE_DIRS := $(LOCAL_PATH)
 
 LOCAL_SHARED_LIBRARIES := \
+    libcutils \
     libdrm \
+    libhardware \
     liblog
 
 include $(BUILD_STATIC_LIBRARY)
